@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Frost Connect | TMS Reborn Maintenance</title><meta name="referrer" content="no-referrer"><link rel="stylesheet" href="styles.css"><script type="module" src="app.js"></script></head>
+<body><main>
+<section id="loginCard" class="card"><header class="login-header"><h1>Authorised Access</h1><p>Frost Connect · TMS Reborn</p></header><form id="loginForm"><label>Login name<select id="loginEmail" autocomplete="username" required><option value="">Select your name</option><option>Chris Frost</option><option>Richard Robinson</option><option>JCC</option></select></label><label>Password<input id="loginPassword" type="password" autocomplete="current-password" required></label><button id="loginBtn" class="primary">Sign in</button><p id="loginError" role="alert" hidden></p><p class="help">Use your Frost TMS Reborn maintenance account. Your old TMS password may be different.</p></form></section>
+<section id="mainCard" class="card" hidden><header class="app-header"><div><h1>Frost Connect</h1><p id="userGreeting">Fleet Maintenance · TMS Reborn</p></div><button id="logoutBtn" aria-label="Sign out">Sign out</button></header>
+<form id="uploadForm"><fieldset><legend>Asset classification</legend><div class="asset-switch"><button type="button" id="btnVehicle" class="active">Vehicle</button><button type="button" id="btnTrailer">Trailer</button></div></fieldset>
+<div class="link-buttons"><button type="button" id="defectsBtn">Pull defect reports</button><button type="button" id="fleetBtn">View fleet status</button></div>
+<label>Select unit<select id="assetSelect" required><option value="">Loading fleet…</option></select></label>
+<label>Entry type<select id="docType" required></select></label>
+<label>Inspection / document date<input id="inspectionDate" type="date" required></label>
+<label>Source files<input id="fileInput" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" multiple required></label><p class="help">PDF, JPG, PNG or WebP · Maximum 25 MB per file · Up to 10 files per inspection.</p>
+<p class="approval-info">Documents go to Frost’s office for authorisation. The office checks each file before storing it and updating any due dates.</p>
+<button id="submitBtn" class="primary">Confirm and upload records</button><div id="statusMessage" role="status" hidden></div></form></section>
+<dialog id="reportsDialog"><header><div><h2 id="reportsTitle">Maintenance audit log</h2><p id="reportsSubtitle"></p></div><button id="closeReports" aria-label="Close reports">✕</button></header><div id="reportFilters" class="asset-switch"><button id="activeDefects" class="active">Active</button><button id="resolvedDefects">Resolved</button></div><div id="reportContent"></div></dialog>
+<footer class="site-footer">Frost Transport Solutions · Maintenance portal for TMS Reborn</footer>
+</main></body></html>
