@@ -82,26 +82,52 @@ el('uploadForm').addEventListener('submit', async (event) => {
   finally { busy = false; controls.forEach((control)=>{control.disabled=false}); el('logoutBtn').disabled=false; el('submitBtn').textContent='Confirm and upload records' }
 })
 
+let reportRevision=0
 function row(title, lines, resolved=false) {
   const article = document.createElement('article'); article.className='report-row'+(resolved?' resolved':'')
   const h = document.createElement('h3'); h.textContent=title; article.append(h)
   for (const line of lines) { const p=document.createElement('p'); p.textContent=line; article.append(p) }
   return article
 }
+async function maintenanceRequests() {
+  const revision=++reportRevision
+  el('reportsTitle').textContent='Maintenance Requests'; el('reportsSubtitle').textContent='Defects sent to JCC by the office'; el('reportFilters').hidden=true
+  el('reportContent').textContent='Loading maintenance requests…'
+  try {
+    const data=[]
+    for(let offset=0;;offset+=50){
+      const page=await rpc('list_vehicle_maintenance_requests',{p_offset:offset,p_limit:50})
+      if(revision!==reportRevision)return
+      data.push(...page); if(page.length<50)break
+    }
+    const labels={lights_indicators:'Lights & Indicators',tyre_condition:'Tyre Condition',wheel_nuts:'Wheel Nuts',mirrors:'Mirrors',window_screen:'Window Screen',bodywork:'Bodywork',wipers_washers:'Wipers/Washers',oil_level:'Oil Level',coolant_level:'Coolant Level',adblue_level:'AdBlue Level',air_lines_suzies:'Air Lines/Suzies',fifth_wheel_clip:'5th Wheel/Clip'}
+    const stamp=(value)=>new Date(value).toLocaleString('en-GB',{timeZone:'Europe/London'})
+    el('reportContent').replaceChildren(...data.map(item=>row(item.vehicle_registration+' · '+(item.repaired_at?'Repaired':'Awaiting repair'),[
+      'Requested: '+stamp(item.requested_at), 'Check: '+stamp(item.checked_at)+' · '+item.driver_full_name,
+      'Failed items: '+(Object.entries(item.checklist||{}).filter(([,passed])=>!passed).map(([key])=>labels[key]||key.replaceAll('_',' ')).join(', ')||'See defect notes'),
+      item.defect_details||'No additional notes', ...(item.repaired_at?['Repair: '+item.repair_date+' · '+item.repair_carried_out_by,item.repair_work_carried_out]:[])
+    ],!!item.repaired_at)))
+    if(!data.length)el('reportContent').textContent='No maintenance requests have been sent to JCC.'
+  }catch(error){if(revision===reportRevision)el('reportContent').textContent=error.message}
+}
+el('requestsBtn').addEventListener('click',()=>{el('reportsDialog').showModal();void maintenanceRequests()})
 async function defects(resolved=false) {
+  const revision=++reportRevision
   el('reportsTitle').textContent='Maintenance audit log'; el('reportsSubtitle').textContent=resolved?'Resolved vehicle defects':'Active defects'; el('reportFilters').hidden=false
   el('activeDefects').classList.toggle('active',!resolved); el('resolvedDefects').classList.toggle('active',resolved)
   el('reportContent').textContent='Loading reports…'
-  try { const data=await rpc('maintenance_portal_defects',{p_resolved:resolved}); el('reportContent').replaceChildren(...data.map((item)=>row(item.label+' · '+item.kind,[item.defect_details||'No details recorded',new Date(item.checked_at).toLocaleString('en-GB'),...(item.repair_details?[item.repair_details]:[])],resolved))); if(!data.length)el('reportContent').textContent='No '+(resolved?'resolved':'active')+' defect reports.' }
-  catch(error){el('reportContent').textContent=error.message}
+  try { const data=await rpc('maintenance_portal_defects',{p_resolved:resolved}); if(revision!==reportRevision)return; el('reportContent').replaceChildren(...data.map((item)=>row(item.label+' · '+item.kind,[item.defect_details||'No details recorded',new Date(item.checked_at).toLocaleString('en-GB'),...(item.repair_details?[item.repair_details]:[])],resolved))); if(!data.length)el('reportContent').textContent='No '+(resolved?'resolved':'active')+' defect reports.' }
+  catch(error){if(revision===reportRevision)el('reportContent').textContent=error.message}
 }
 el('defectsBtn').addEventListener('click',()=>{el('reportsDialog').showModal();void defects()})
 el('activeDefects').addEventListener('click',()=>void defects())
 el('resolvedDefects').addEventListener('click',()=>void defects(true))
-el('closeReports').addEventListener('click',()=>el('reportsDialog').close())
+el('closeReports').addEventListener('click',()=>{reportRevision++;el('reportsDialog').close()})
+el('reportsDialog').addEventListener('cancel',()=>{reportRevision++})
 el('fleetBtn').addEventListener('click',async()=>{
+  const revision=++reportRevision
   el('reportsTitle').textContent='Fleet status'; el('reportsSubtitle').textContent='Frost Transport Solutions'; el('reportFilters').hidden=true; el('reportsDialog').showModal(); el('reportContent').textContent='Loading fleet…'
-  try { await loadFleet(); el('reportContent').replaceChildren(...fleet.map((asset)=>row(asset.label+' · '+asset.kind,['Status: '+asset.condition_status.replaceAll('_',' '),'PMI due: '+(asset.pmi_due||'Not entered'),'Brake test due: '+(asset.brake_due||'Not entered'),'MOT due: '+(asset.mot_due||'Not entered')]))); if(!fleet.length)el('reportContent').textContent='No active fleet assets.' }catch(error){el('reportContent').textContent=error.message}
+  try { await loadFleet(); if(revision!==reportRevision)return; el('reportContent').replaceChildren(...fleet.map((asset)=>row(asset.label+' · '+asset.kind,['Status: '+asset.condition_status.replaceAll('_',' '),'PMI due: '+(asset.pmi_due||'Not entered'),'Brake test due: '+(asset.brake_due||'Not entered'),'MOT due: '+(asset.mot_due||'Not entered')]))); if(!fleet.length)el('reportContent').textContent='No active fleet assets.' }catch(error){if(revision===reportRevision)el('reportContent').textContent=error.message}
 })
 window.addEventListener('focus',()=>{if(loggedIn&&!busy)void loadFleet().catch((error)=>status(error.message,true))})
 db.auth.onAuthStateChange((event)=>{if(event==='SIGNED_OUT'&&loggedIn){loggedIn=false;fleet=[];submission=null;el('reportsDialog').close();el('mainCard').hidden=true;el('loginCard').hidden=false}})

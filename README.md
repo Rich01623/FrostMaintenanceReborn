@@ -1,5 +1,11 @@
 # Frost Maintenance Reborn
 
+Defect-request update (14 October 2026): “Check for Maintenance Requests” lists
+vehicle defects explicitly sent to JCC from Fleet Maintenance → View Defects.
+Requires operational database update 097. Reports remain private and visible only
+to active mechanics in the same company or Office users with Maintenance access.
+Existing upload and document-authorisation workflows are unchanged.
+
 Frost Connect maintenance upload portal for Frost Transport Solutions in TMS Reborn.
 
 Static assets only; uploaded documents stay in Frost’s private Supabase project. Anonymous visitors cannot read the fleet or upload documents.
